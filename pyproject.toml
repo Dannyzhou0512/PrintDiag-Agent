@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "printdiag-agent"
+version = "0.1.0"
+description = "A 3D printer fault diagnosis project."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "httpx",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+agent = ["fastapi>=0.115,<1", "pydantic>=2.10,<3", "uvicorn>=0.32,<1"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"printdiag.rag" = ["knowledge/maintenance/*.json", "knowledge/maintenance/*.jsonl"]
+"printdiag.web" = ["*.html", "demo_data/public_fixtures.json", "console/*.html", "console/*.css", "console/*.js", "console/*.svg", "console/views/*.js"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

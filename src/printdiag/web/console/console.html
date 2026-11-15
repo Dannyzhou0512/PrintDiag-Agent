@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PrintDiag Console</title>
+  <link rel="icon" type="image/svg+xml" href="/console/static/favicon.svg">
+  <link rel="stylesheet" href="/console/static/tokens.css">
+  <link rel="stylesheet" href="/console/static/console.css">
+</head>
+<body data-page="overview">
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="/console/overview">
+      <span class="brand-mark" aria-hidden="true"><svg class="ico"><use href="/console/static/icons.svg#cpu"></use></svg></span>
+      <span><strong>PrintDiag</strong><small>Console</small></span>
+    </a>
+    <div class="nav-label">工作台</div>
+    <nav class="nav" aria-label="主导航">
+      <a href="/console/overview" data-nav="overview"><svg class="ico" aria-hidden="true"><use href="/console/static/icons.svg#grid"></use></svg>设备总览</a>
+      <a href="/console/diagnosis" data-nav="diagnosis"><svg class="ico" aria-hidden="true"><use href="/console/static/icons.svg#chat"></use></svg>AI 智能诊断</a>
+      <a href="/console/simulator" data-nav="simulator"><svg class="ico" aria-hidden="true"><use href="/console/static/icons.svg#sliders"></use></svg>仿真控制</a>
+      <a href="/console/events" data-nav="events"><svg class="ico" aria-hidden="true"><use href="/console/static/icons.svg#activity"></use></svg>实时事件</a>
+      <a href="/console/history" data-nav="history"><svg class="ico" aria-hidden="true"><use href="/console/static/icons.svg#history"></use></svg>诊断历史</a>
+      <a href="/console/knowledge" data-nav="knowledge"><svg class="ico" aria-hidden="true"><use href="/console/static/icons.svg#book"></use></svg>维修知识库</a>
+    </nav>
+    <footer class="sidebar-foot"><span>本地仿真环境</span><small>Marlin Simulator</small></footer>
+  </aside>
+  <div class="sidebar-backdrop" id="sidebarBackdrop" hidden></div>
+  <div class="main">
+    <a class="skip-link" href="#view">跳到工作区</a>
+    <header class="topbar">
+      <button type="button" class="btn ghost sidebar-toggle" id="sidebarToggle" aria-label="打开导航" aria-expanded="false" aria-controls="sidebar"><svg class="ico" aria-hidden="true"><use href="/console/static/icons.svg#menu"></use></svg></button>
+      <div class="topbar-title">PrintDiag Console</div>
+      <div class="topbar-meta" aria-label="连接状态">
+        <span class="indicator" id="deviceBadge">读取设备</span>
+        <span class="indicator" id="qwenBadge">读取模型状态</span>
+      </div>
+    </header>
+    <main class="content" id="view" tabindex="-1">
+      <div class="loading-state" role="status">正在加载控制台…</div>
+    </main>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<dialog class="drawer" id="drawer" aria-labelledby="drawerTitle">
+  <div class="drawer-head"><strong id="drawerTitle">详情</strong><button type="button" class="btn ghost drawer-close" id="drawerClose" aria-label="关闭详情" autofocus>×</button></div>
+  <div class="drawer-body" id="drawerBody"></div>
+  <div class="toast" id="drawerToast" role="status"></div>
+</dialog>
+<noscript><p>PrintDiag Console 需要 JavaScript 才能读取设备状态和发起诊断。</p></noscript>
+<script type="module" src="/console/static/app.js"></script>
+</body>
+</html>

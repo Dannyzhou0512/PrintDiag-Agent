@@ -1,0 +1,27 @@
+{
+  "description": "合成演示与测试草稿。所有内容为示例，不来自历史模型输出或设备实验。",
+  "limit": {
+    "fault_category": "限位异常",
+    "suspected_cause": "限位触发异常可能与安装位置或触发机构有关。",
+    "supporting_observation": "用户报告归零时出现限位异常，需核对实际触发读数。",
+    "recommended_checks": [
+      "查看设备手册中的限位安装位置。",
+      "设备停止并断电后，目视检查触发机构是否有遮挡。"
+    ],
+    "diagnosis_status": "待验证",
+    "tool_observation_available": false,
+    "safety_note": "设备静止、断电且冷却后，按设备手册进行目视检查。"
+  },
+  "motion": {
+    "fault_category": "运动控制故障",
+    "suspected_cause": "需要确认运动异常发生时设备是否正在处理命令。",
+    "supporting_observation": "用户描述轴无法移动，当前缺少可复核的设备记录。",
+    "recommended_checks": [
+      "记录异常发生的时间和屏幕报错。",
+      "查看设备手册中的运动状态说明，对照已保存的日志。"
+    ],
+    "diagnosis_status": "待验证",
+    "tool_observation_available": false,
+    "safety_note": "保留当前状态，检查已有诊断记录。"
+  }
+}

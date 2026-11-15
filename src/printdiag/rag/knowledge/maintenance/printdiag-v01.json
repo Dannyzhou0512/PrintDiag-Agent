@@ -1,0 +1,35 @@
+[
+  {
+    "document_id": "printdiag-endstop-observation",
+    "title": "机械限位观测与人工检查",
+    "source": "docs/AGENT_MVP_V01_IMPLEMENTATION_PLAN.md#工具契约",
+    "applicable_version": "PrintDiag Agent-MVP V0.1，Marlin Simulator 诊断投影",
+    "revision": "v0.1",
+    "license_basis": "项目自编说明，依据已审核的 Agent 投影和安全约定",
+    "heading": "X/Y/Z Min endstop 限位开关",
+    "anchor": "mechanical-and-effective",
+    "excerpt": "限位开关的有效触发与机械几何触发是两类观测。x_min、y_min 或 z_min 的两个值不一致时，应先核对开关安装、触发机构与接线条件。几何触发与有效触发都为真时，可以先检查机械接触和安装位置。缺失字段表示未知。单次模拟器观测无法确认实体开关损坏。涉及接头的人工检查应在设备静止、断电后按设备手册进行。"
+  },
+  {
+    "document_id": "printdiag-device-observation",
+    "title": "模拟设备状态、超时与队列",
+    "source": "docs/M1_acceptance_report.md",
+    "applicable_version": "PrintDiag M1 状态采集，Agent-MVP V0.1",
+    "revision": "v0.1",
+    "license_basis": "项目自编摘要，依据 M1 通信与采集验收",
+    "heading": "设备离线、通信超时与状态快照",
+    "anchor": "connection-and-snapshot",
+    "excerpt": "先核对设备服务的连接和采样时间。连接失败、超时或数据过期时，设备状态应视为未知。idle 和 moves_queued 描述当前队列，sim_seconds 表示模拟时间。位置信息、队列和健康字段均为一次读取范围内的观测，不能单独确认某个部件的根因。"
+  },
+  {
+    "document_id": "printdiag-thermal-observation",
+    "title": "温控故障观测边界",
+    "source": "docs/M2_component_capabilities.md",
+    "applicable_version": "Marlin Simulator M2.1 能力调查，Agent-MVP V0.1",
+    "revision": "v0.1",
+    "license_basis": "项目自编摘要，依据已审核的组件能力记录",
+    "heading": "温度、传感器与加热器",
+    "anchor": "thermal-observation-limit",
+    "excerpt": "加热器和温度传感器是不同组件。温控故障提示、温度读数与加热输出分别描述不同现象。只有当前热故障指示数量时，不能区分传感器异常、加热器异常和其他温控原因。保留设备型号、报错和故障出现条件供人工核查。"
+  }
+]

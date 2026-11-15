@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PrintDiag · 智能诊断助手</title>
+<style>
+  :root{--bg:#0b1220;--panel:#111b2e;--panel2:#0f1728;--line:#22304a;--text:#e7eefc;
+        --muted:#94a3b8;--accent:#38bdf8;--ok:#34d399;--warn:#fbbf24;--bad:#f87171;
+        --chip:#1e3a5f;--user:#123a5c;--assistant:#101d33}
+  *{box-sizing:border-box} body{margin:0;background:radial-gradient(1100px 560px at 12% -10%,#13233d,var(--bg));
+    color:var(--text);font:14px/1.65 "Segoe UI","Microsoft YaHei",system-ui,sans-serif}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 24px;
+    border-bottom:1px solid var(--line);background:rgba(9,15,28,.92);position:sticky;top:0;z-index:20}
+  h1{font-size:18px;margin:0} h1 small{color:var(--muted);font-weight:400;font-size:11px;margin-left:9px}
+  .badges{display:flex;gap:7px;flex-wrap:wrap}
+  .badge{font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+  .badge.ok{color:var(--ok);border-color:#14532d}.badge.warn{color:var(--warn);border-color:#78350f}
+  .badge.bad{color:var(--bad);border-color:#7f1d1d}.badge.live{color:var(--accent);border-color:#0c4a6e}
+  main{max-width:1060px;margin:0 auto;padding:14px 20px 90px}
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
+    border-radius:14px;padding:12px 15px;margin-bottom:12px;box-shadow:0 8px 24px rgba(0,0,0,.22)}
+  .device-strip{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px}
+  .device-strip b{font-size:12px;color:#cbd5e1;margin-right:3px}
+  .device-item{color:var(--muted)} .device-item span{color:var(--text)}
+  .spacer{margin-left:auto}
+  select,textarea,input{background:#0a1424;color:var(--text);border:1px solid var(--line);
+    border-radius:9px;padding:8px 10px;font:inherit;outline:none}
+  select:focus,textarea:focus{border-color:var(--accent)}
+  button{border:1px solid transparent;border-radius:9px;padding:8px 14px;font:inherit;font-weight:600;
+    cursor:pointer;background:var(--accent);color:#03111d}
+  button.secondary{background:#13233d;color:var(--text);border-color:var(--line)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:9px}
+  .tab{padding:7px 12px;border:1px solid var(--line);background:#0d1728;color:var(--muted);
+    border-radius:9px;cursor:pointer;font-size:12px;font-weight:500}
+  .tab.active{background:var(--chip);color:#dff3ff;border-color:#1e4b73}
+  .chat{min-height:300px;max-height:55vh;overflow-y:auto;padding:8px 4px 12px;scroll-behavior:smooth}
+  .msg{display:flex;margin:12px 0;gap:9px;align-items:flex-start}
+  .msg.user{flex-direction:row-reverse}
+  .avatar{width:28px;height:28px;border-radius:50%;background:#1d2c45;display:flex;align-items:center;
+    justify-content:center;font-size:11px;flex:0 0 auto;color:#cfe8ff}
+  .bubble{max-width:78%;background:var(--assistant);border:1px solid var(--line);border-radius:13px;
+    padding:11px 14px;font-size:13.5px;position:relative}
+  .msg.user .bubble{background:var(--user);border-color:#1e4b73}
+  .bubble h4{margin:10px 0 5px;font-size:12.5px;color:#dbeafe}
+  .bubble p{margin:4px 0}.bubble ul{margin:3px 0;padding-left:18px}.bubble li{margin:3px 0}
+  .chips{display:flex;gap:5px;flex-wrap:wrap;margin:2px 0 7px}
+  .chip{font-size:10.5px;padding:2px 8px;border-radius:999px;background:var(--chip);color:#c7e6ff;
+    border:1px solid #1e4b73}
+  .muted{color:var(--muted)} .small{font-size:12px}
+  .stage{display:flex;align-items:center;gap:8px;color:var(--accent);font-size:12.5px;min-height:20px}
+  .spinner{width:12px;height:12px;border:2px solid #1e4b73;border-top-color:var(--accent);
+    border-radius:50%;animation:spin .8s linear infinite;flex:0 0 auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .cursor{display:inline-block;width:7px;height:1.1em;background:var(--accent);vertical-align:-2px;
+    margin-left:2px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;padding-top:7px;border-top:1px dashed #1c2a42}
+  .actions button{font-size:11px;padding:4px 8px;background:#13233d;color:var(--muted);border-color:var(--line)}
+  .stage-log{margin-top:7px;font-size:11px;color:var(--muted)}
+  .stage-log summary{cursor:pointer;color:var(--muted)}
+  .composer{display:grid;grid-template-columns:1fr auto;gap:9px;align-items:end;margin-top:9px}
+  textarea{width:100%;min-height:62px;resize:vertical;max-height:140px}
+  .composer-side{display:flex;flex-direction:column;gap:7px;min-width:178px}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .switch{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px}
+  .switch input{width:auto;accent-color:var(--accent)}
+  .hint{font-size:11px;color:var(--muted);margin-top:5px}
+  .error{display:none;margin:8px 0;padding:8px 11px;border-radius:9px;background:#3b0d0d;
+    border:1px solid #7f1d1d;color:#fecaca;font-size:12px}
+  details{summary{cursor:pointer}}
+  .details{margin-top:2px}.details summary{color:var(--muted);font-size:12px;margin-top:7px}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-top:5px}
+  th,td{text-align:left;border-bottom:1px solid #1c2a42;padding:5px 4px;vertical-align:top}
+  th{color:var(--muted);font-weight:500}
+  pre{white-space:pre-wrap;word-break:break-word;background:#070e1a;border:1px solid #1c2a42;
+    border-radius:8px;padding:9px;max-height:240px;overflow:auto;font-size:11px;color:#a8c7e8}
+  .stale{color:var(--warn)} .hidden{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>PrintDiag <small>智能诊断助手 · 设备只读 · Live Qwen 可选</small></h1>
+  <div class="badges">
+    <span class="badge" id="deviceBadge">设备：检查中</span>
+    <span class="badge live" id="modelBadge">模型：未检查</span>
+    <span class="badge" id="liveBadge">Live：未配置</span>
+  </div>
+</header>
+<main>
+  <section class="card">
+    <div class="device-strip">
+      <b>设备实时状态</b>
+      <span class="device-item">在线 <span id="devOnline">—</span></span>
+      <span class="device-item">喷嘴 <span id="devHotend">—</span></span>
+      <span class="device-item">目标 <span id="devTarget">未知</span></span>
+      <span class="device-item">热床 <span id="devBed">—</span></span>
+      <span class="device-item">位置 <span id="devPos">—</span></span>
+      <span class="device-item">限位 <span id="devEndstops">—</span></span>
+      <span class="device-item">状态 <span id="devIdle">—</span></span>
+      <span class="device-item">异常 <span id="devFault">—</span></span>
+      <span class="device-item">采集 <span id="devObserved">—</span></span>
+      <span class="spacer"></span>
+      <label class="small muted" for="refreshInterval">刷新</label>
+      <select id="refreshInterval" style="padding:4px 7px">
+        <option value="5000">5 秒</option>
+        <option value="10000">10 秒</option>
+        <option value="30000">30 秒</option>
+        <option value="0">手动</option>
+      </select>
+      <button class="secondary" id="refreshBtn" style="padding:4px 9px;font-size:12px">刷新</button>
+    </div>
+    <div class="small muted" id="deviceNote" style="margin-top:5px">自动刷新只读设备接口，不调用 Qwen，不执行运动/加热。来源：LIVE_SIMULATOR / SYNTHETIC_FIXTURE / SAVED_MODEL_REPLAY。</div>
+  </section>
+
+  <section class="card">
+    <div class="toolbar">
+      <button class="tab active" data-mode="auto">智能问答</button>
+      <button class="tab" data-mode="live">AI 诊断 (Live Qwen)</button>
+      <button class="tab" data-mode="replay">Demo 回放</button>
+      <span class="spacer"></span>
+      <div id="liveControls" class="row">
+        <label class="small muted" for="model">模型</label>
+        <select id="model" style="padding:5px 8px">
+          <option value="base">Base</option>
+          <option value="lora">LoRA V0.3</option>
+        </select>
+        <span class="switch"><input type="checkbox" id="v2"> V2 证据后处理</span>
+      </div>
+      <div id="demoControls" class="row hidden">
+        <label class="small muted" for="scenario">演示场景</label>
+        <select id="scenario" style="padding:5px 8px"></select>
+      </div>
+    </div>
+
+    <div class="chat" id="chat">
+      <div class="msg"><div class="avatar">AI</div><div class="bubble">
+        <p>你好！我是 PrintDiag-Agent。你可以直接问设备状态，或描述打印故障。</p>
+        <p class="small muted">状态问题不消耗 GPU；故障问题在 Live 模式下调用 Qwen3.5-4B。</p>
+      </div></div>
+    </div>
+
+    <div class="composer">
+      <div>
+        <textarea id="symptom" maxlength="500" placeholder="输入故障症状或问题，例如：打印出来的模型存在欠挤出，应该怎么排查？"></textarea>
+        <div class="hint" id="inputHint">普通问候/身份/状态问题不调用模型；具体故障才进入 AI 诊断。</div>
+      </div>
+      <div class="composer-side">
+        <button id="sendBtn">开始诊断</button>
+        <button class="secondary" id="exportBtn" disabled>导出 Markdown</button>
+        <span class="switch"><input type="checkbox" id="showDetails"> 默认展开诊断依据</span>
+      </div>
+    </div>
+    <div class="error" id="error"></div>
+  </section>
+
+  <!-- 诊断结果区域：对话中的 AI 回答与下方“诊断依据” -->
+  <section class="card hidden" id="detailsCard">
+    <div class="row"><b>诊断依据</b><span class="small muted">技术细节，默认折叠，不影响普通用户阅读。</span></div>
+    <details class="details" open id="evidenceDetails">
+      <summary>设备证据（只读）</summary>
+      <table><thead><tr><th>工具</th><th>证据 ID</th><th>时间</th><th>数据</th></tr></thead>
+        <tbody id="evidenceBody"><tr><td colspan="4" class="muted">无</td></tr></tbody></table>
+    </details>
+    <details class="details">
+      <summary>RAG 维修知识（仅背景，不是设备观测）</summary>
+      <table><thead><tr><th>文档</th><th>摘要</th><th>来源</th></tr></thead>
+        <tbody id="ragBody"><tr><td colspan="3" class="muted">无</td></tr></tbody></table>
+    </details>
+    <details class="details">
+      <summary>V2 证据判断 / 报告状态 / 安全 / 预算</summary>
+      <div id="v2Body" class="small muted">—</div>
+    </details>
+    <details class="details">
+      <summary>原始模型输出与 Guard（排障用）</summary>
+      <pre id="debugBody"></pre>
+    </details>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const state = { mode: "auto", scenarios: [], last: null, lastUser: "", interval: 5000,
+  deviceTimer: null, deviceInFlight: null, backoff: 0, lastDeviceOk: 0, live: null,
+  typing: null, requestId: 0, streamController: null, stages: [] };
+const SOURCE_CLASS = { LIVE_QWEN_BASE: "live", LIVE_QWEN_LORA: "live",
+  MOCK_QWEN_BASE: "warn", MOCK_QWEN_LORA: "warn", SAVED_MODEL_REPLAY: "warn",
+  DEVICE_STATUS_ONLY: "ok", CHAT_GREETING: "ok", MODEL_IDENTITY: "ok",
+  CAPABILITIES: "ok", CLARIFICATION_NEEDED: "warn" };
+const escapeHtml = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (ch) =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+const reduceMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+async function getJSON(url, options) {
+  const res = await fetch(url, options);
+  let data = {};
+  try { data = await res.json(); } catch (e) { data = {}; }
+  if (!res.ok) {
+    const detail = data.detail || {};
+    throw new Error(detail.message || detail.code || ("HTTP " + res.status));
+  }
+  return data;
+}
+
+function nearBottom() {
+  const chat = $("chat");
+  return chat.scrollHeight - chat.scrollTop - chat.clientHeight < 90;
+}
+
+function addMessage(role, html, { forceScroll = false } = {}) {
+  const shouldScroll = forceScroll || nearBottom();
+  const wrap = document.createElement("div");
+  wrap.className = "msg " + role;
+  wrap.innerHTML = `<div class="avatar">${role === "user" ? "你" : "AI"}</div>
+    <div class="bubble">${html}</div>`;
+  $("chat").appendChild(wrap);
+  if (shouldScroll) $("chat").scrollTop = $("chat").scrollHeight;
+  return wrap.querySelector(".bubble");
+}
+
+function beginAssistant() {
+  const shouldScroll = nearBottom();
+  const wrap = document.createElement("div");
+  wrap.className = "msg";
+  wrap.innerHTML = `<div class="avatar">AI</div><div class="bubble">
+    <div class="stage"><span class="spinner"></span><span class="stage-text">正在理解问题…</span></div>
+    <div class="stage-log hidden"><details><summary>处理阶段</summary><div class="stage-list"></div></details></div>
+  </div>`;
+  $("chat").appendChild(wrap);
+  if (shouldScroll) $("chat").scrollTop = $("chat").scrollHeight;
+  return wrap.querySelector(".bubble");
+}
+
+function cancelTyping() {
+  if (state.typing) { clearTimeout(state.typing.timer); state.typing.cancel(); state.typing = null; }
+}
+
+function setStage(bubble, label, key, elapsed) {
+  const text = bubble.querySelector(".stage-text");
+  if (text) text.textContent = label;
+  if (key) {
+    const log = bubble.querySelector(".stage-log");
+    const list = bubble.querySelector(".stage-list");
+    if (log && list) {
+      log.classList.remove("hidden");
+      const row = document.createElement("div");
+      row.textContent = `${label}${elapsed == null ? "" : " · " + Math.round(elapsed) + " ms"}`;
+      list.appendChild(row);
+    }
+  }
+}
+
+function listBlock(title, items) {
+  if (!items || !items.length) return "";
+  return `<h4>${escapeHtml(title)}</h4><ul>${items.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+}
+
+function answerHtml(answer) {
+  const mode = answer.mode || "DEVICE_STATUS_ONLY";
+  const cls = SOURCE_CLASS[mode] || "warn";
+  return `<div class="chips"><span class="chip ${cls}">${escapeHtml(mode)}</span>
+      ${answer.model ? `<span class="chip">${escapeHtml(answer.model)}</span>` : ""}</div>
+    <p>${escapeHtml(answer.conclusion)}</p>
+    ${listBlock("当前证据", answer.evidence)}
+    ${listBlock("可能原因（待验证）", answer.possible_causes)}
+    ${listBlock("建议下一步", answer.next_steps)}
+    ${listBlock("尚不能确认", answer.uncertain)}`;
+}
+
+function plainAnswer(answer) {
+  const lines = [answer.conclusion || ""];
+  for (const [title, key] of [["当前证据", "evidence"], ["可能原因（待验证）", "possible_causes"],
+    ["建议下一步", "next_steps"], ["尚不能确认", "uncertain"]]) {
+    const items = answer[key] || [];
+    if (items.length) lines.push("", title, ...items.map(item => "• " + item));
+  }
+  return lines.join("\n");
+}
+
+function renderActions(bubble) {
+  const actions = document.createElement("div");
+  actions.className = "actions";
+  actions.innerHTML = `<button data-action="copy">复制回答</button>
+    <button data-action="evidence">查看诊断依据</button>
+    <button data-action="export">导出 Markdown</button>
+    <button data-action="skip">立即显示全文</button>`;
+  bubble.appendChild(actions);
+  actions.addEventListener("click", (event) => {
+    const action = event.target.dataset.action;
+    if (action === "copy") {
+      const text = bubble.dataset.plain || "";
+      navigator.clipboard && navigator.clipboard.writeText(text);
+    } else if (action === "evidence") {
+      $("detailsCard").classList.remove("hidden");
+      $("detailsCard").scrollIntoView({behavior: "smooth", block: "nearest"});
+    } else if (action === "export") {
+      exportMarkdown();
+    } else if (action === "skip") {
+      finishTyping();
+    }
+  });
+}
+
+function typewriter(bubble, text, done) {
+  cancelTyping();
+  if (reduceMotion() || text.length < 4) { bubble.dataset.plain = text; done(); return; }
+  const target = document.createElement("div");
+  target.className = "typing-body";
+  target.textContent = "";
+  const cursor = document.createElement("span"); cursor.className = "cursor";
+  bubble.innerHTML = ""; bubble.appendChild(target); bubble.appendChild(cursor);
+  let index = 0;
+  const total = text.length;
+  const step = total > 700 ? 2 : 1;
+  const interval = total > 700 ? 12 : 18;
+  const finish = () => {
+    if (state.typing) { clearTimeout(state.typing.timer); state.typing = null; }
+    caret.remove(); target.textContent = text; bubble.dataset.plain = text;
+    done();
+  };
+  const caret = cursor;
+  state.typing = { cancel: finish, timer: null };
+  const tick = () => {
+    if (!state.typing || !bubble.contains(target)) return;
+    index = Math.min(total, index + step);
+    target.textContent = text.slice(0, index);
+    if (index >= total) { finish(); return; }
+    const ch = text[index - 1];
+    const delay = /[。！？；\\n]/.test(ch) ? interval * 2.6 : interval;
+    state.typing.timer = setTimeout(tick, delay);
+  };
+  state.typing.timer = setTimeout(tick, 80);
+}
+
+function finishTyping() {
+  if (state.typing) state.typing.cancel();
+}
+
+function finalizeAnswer(bubble, payload) {
+  state.last = payload;
+  const answer = payload.answer || {};
+  bubble.dataset.plain = plainAnswer(answer);
+  const finish = () => {
+    bubble.innerHTML = answerHtml(answer);
+    bubble.dataset.plain = plainAnswer(answer);
+    renderActions(bubble);
+    if (payload.meta) renderDetails(payload);
+    $("exportBtn").disabled = false;
+  };
+  typewriter(bubble, plainAnswer(answer), finish);
+}
+
+function renderDetails(payload) {
+  const meta = payload.meta || {};
+  const report = payload.report || {};
+  const evidence = meta.device_evidence || [];
+  $("evidenceBody").innerHTML = evidence.length ? evidence.map(item =>
+    `<tr><td>${escapeHtml(item.tool)}</td><td>${escapeHtml(item.evidence_id)}</td>
+     <td>${escapeHtml(item.observed_at_utc ? new Date(item.observed_at_utc).toLocaleString() : "未知")}</td>
+     <td><code>${escapeHtml(JSON.stringify(item.data))}</code></td></tr>`).join("")
+    : '<tr><td colspan="4" class="muted">无实时设备证据</td></tr>';
+  const rag = meta.rag_hits || [];
+  $("ragBody").innerHTML = rag.length ? rag.map(hit =>
+    `<tr><td>${escapeHtml(hit.document_id)}</td><td>${escapeHtml(hit.excerpt)}</td>
+     <td>${escapeHtml(hit.source_reference || "")}</td></tr>`).join("")
+    : '<tr><td colspan="3" class="muted">无 RAG 命中</td></tr>';
+  const guard = meta.guard || {};
+  const budget = meta.budget || {};
+  const safety = meta.safety || {};
+  const safetyText = safety.status === "review_required" ? "需人工复核"
+    : safety.blocked === true ? "已拦截危险建议" : safety.blocked === false ? "未检出风险" : "未评估";
+  $("v2Body").innerHTML = `<div>报告状态：${escapeHtml(report.status || "—")}</div>
+    <div>GPU 预算：${escapeHtml(budget.used == null ? 0 : budget.used)} / ${escapeHtml(budget.budget == null ? "—" : budget.budget)}（剩余 ${escapeHtml(budget.remaining == null ? "—" : budget.remaining)}）</div>
+    <div>V2：${meta.v2_enabled ? "ON" : "OFF"}；决策：${escapeHtml(meta.v2_decision || "—")}；
+      编码：${escapeHtml((meta.v2_codes || []).join(", ") || "—")}</div>
+    <div>安全：${safetyText}</div>
+    <div>Guard：${guard.valid ? "通过" : "失败（" + escapeHtml(guard.error_code) + "）"}</div>
+    <div>来源：${escapeHtml(meta.mode || "—")}；耗时：${escapeHtml(meta.server_latency_ms || meta.latency_ms || "—")} ms</div>`;
+  $("debugBody").textContent = JSON.stringify({guard, report}, null, 2).slice(0, 12000);
+  $("detailsCard").classList.remove("hidden");
+  if ($("showDetails").checked) $("detailsCard").scrollIntoView({behavior: "smooth", block: "nearest"});
+}
+
+async function loadLiveStatus() {
+  try {
+    const [live, health] = await Promise.all([
+      getJSON("/api/live/status"), getJSON("/api/live/health")
+    ]);
+    state.live = live;
+    const badge = $("liveBadge");
+    if (live.available) {
+      badge.className = "badge live";
+      badge.textContent = `Live：${live.used}/${live.budget} 已用，剩余 ${live.remaining}`;
+    } else {
+      badge.className = "badge warn";
+      badge.textContent = "Live：未配置 / 预算为 0";
+    }
+    const modelBadge = $("modelBadge");
+    if (health.model_ready) {
+      modelBadge.className = "badge ok";
+      modelBadge.textContent = "模型：Qwen3.5-4B 在线";
+    } else if (live.configured) {
+      modelBadge.className = "badge warn";
+      modelBadge.textContent = "模型：云端未就绪";
+    } else {
+      modelBadge.className = "badge warn";
+      modelBadge.textContent = "模型：Live 未配置";
+    }
+  } catch (err) {
+    $("liveBadge").className = "badge bad";
+    $("liveBadge").textContent = "Live：状态未知";
+  }
+}
+
+async function loadDevice() {
+  if (state.deviceInFlight) return;
+  const controller = new AbortController();
+  state.deviceInFlight = controller;
+  try {
+    const d = await getJSON("/api/device/status", {signal: controller.signal});
+    const mock = d.source === "SYNTHETIC_FIXTURE";
+    const connected = d.source === "LIVE_SIMULATOR" && d.device_connected === true;
+    const connectionLabel = mock ? "Mock 示例 · 设备未连接" : connected ? "模拟器在线"
+      : d.online === true ? "设备来源未核实" : "设备离线";
+    const connectionClass = connected ? "ok" : mock ? "" : "bad";
+    $("devOnline").textContent = connectionLabel;
+    $("devOnline").className = "badge " + connectionClass;
+    $("deviceBadge").className = "badge " + connectionClass;
+    $("deviceBadge").textContent = connectionLabel;
+    const t = d.temperature || {};
+    $("devHotend").textContent = t.hotend == null ? "未知" : Number(t.hotend).toFixed(0) + "°C";
+    $("devTarget").textContent = t.hotend_target == null ? "未知" : Number(t.hotend_target).toFixed(0) + "°C";
+    $("devBed").textContent = t.bed == null ? "未知" : Number(t.bed).toFixed(0) + "°C";
+    const p = d.position_mm;
+    $("devPos").textContent = p ? `X ${Number(p.x).toFixed(1)} / Y ${Number(p.y).toFixed(1)} / Z ${Number(p.z).toFixed(1)} mm` : "未知";
+    const endstops = (d.endstops && d.endstops.components) || [];
+    const fired = endstops.filter(item => item.triggered === true).map(item => item.axis);
+    $("devEndstops").textContent = fired.length ? fired.join(",") : endstops.length === 3 && endstops.every(item => item.triggered === false) ? "三轴未触发" : "未知";
+    $("devIdle").textContent = d.idle == null ? "未知" : (d.idle ? "空闲" : "打印中");
+    $("devFault").textContent = d.thermal_fault_count == null ? "未知" : d.thermal_fault_count;
+    $("devObserved").textContent = d.observed_at_utc ? new Date(d.observed_at_utc).toLocaleTimeString() : "未知";
+    state.lastDeviceOk = Date.now();
+    state.backoff = 0;
+    $("deviceNote").className = "small muted";
+    $("deviceNote").textContent = "自动刷新只读设备接口，不调用 Qwen，不执行运动/加热。来源：LIVE_SIMULATOR / SYNTHETIC_FIXTURE / SAVED_MODEL_REPLAY。";
+    const observed = d.observed_at_utc ? new Date(d.observed_at_utc).getTime() : null;
+    if (observed && Date.now() - observed > Math.max(15000, state.interval * 3)) {
+      $("deviceNote").className = "small stale";
+      $("deviceNote").textContent = "设备数据可能已过期（stale）；请手动刷新。";
+    }
+  } catch (err) {
+    if (err.name === "AbortError") return;
+    $("deviceBadge").className = "badge bad";
+    $("deviceBadge").textContent = "设备：离线";
+    $("devOnline").innerHTML = '<span class="badge bad">离线</span>';
+    state.backoff = Math.min(60000, Math.max(1000, state.backoff * 2));
+    $("deviceNote").className = "small stale";
+    $("deviceNote").textContent = "设备暂时不可达，将退避重试：" + err.message;
+  } finally {
+    state.deviceInFlight = null;
+    schedulePoll();
+  }
+}
+
+function schedulePoll() {
+  if (state.deviceTimer) clearTimeout(state.deviceTimer);
+  if (!state.interval || document.hidden) return;
+  const delay = Math.max(state.interval, state.backoff || 0);
+  state.deviceTimer = setTimeout(() => loadDevice(), delay);
+}
+
+function updateInterval() {
+  state.interval = parseInt($("refreshInterval").value, 10);
+  schedulePoll();
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) { if (state.deviceTimer) clearTimeout(state.deviceTimer); }
+  else { loadDevice(); }
+});
+
+function setMode(mode) {
+  state.mode = mode;
+  document.querySelectorAll(".tab").forEach(tab => tab.classList.toggle("active", tab.dataset.mode === mode));
+  $("liveControls").classList.toggle("hidden", mode !== "live");
+  $("demoControls").classList.toggle("hidden", mode !== "replay");
+  $("symptom").readOnly = mode === "replay";
+  if (mode === "replay") {
+    const scenario = state.scenarios.find(item => item.scenario_id === $("scenario").value);
+    if (scenario) $("symptom").value = scenario.symptom;
+    $("inputHint").textContent = "Demo 回放只演示固定场景；自由提问请使用智能问答或 Live 模式。";
+  } else {
+    $("symptom").readOnly = false;
+    $("inputHint").textContent = mode === "live"
+      ? "故障问题会调用 Qwen3.5-4B；每次诊断最多 1 次生成，消耗 1 次预算。"
+      : "普通问候/身份/状态问题不调用模型；具体故障才进入 AI 诊断。";
+  }
+}
+
+async function handleEvent(bubble, event) {
+  if (event.type === "stage") {
+    state.stages.push({stage: event.stage, label: event.label, elapsed_ms: event.elapsed_ms});
+    setStage(bubble, event.label, event.stage, event.elapsed_ms);
+  } else if (event.type === "final") {
+    state.stages.push({stage: "done", label: "已完成", elapsed_ms: event.elapsed_ms});
+    setStage(bubble, "已完成", null, event.elapsed_ms);
+    const stage = bubble.querySelector(".stage");
+    if (stage) stage.remove();
+    finalizeAnswer(bubble, event);
+    if (event.meta) loadLiveStatus();
+  } else if (event.type === "error") {
+    bubble.innerHTML = `<p class="stale">诊断失败：${escapeHtml(event.message || event.code)}</p>
+      <p class="small muted">错误码：${escapeHtml(event.code || "LIVE_FAILED")}。未使用历史回放伪装成功，也未自动重试。</p>`;
+  }
+}
+
+async function ask() {
+  const symptom = $("symptom").value.trim();
+  if (!symptom) { showError("请输入故障症状或问题"); return; }
+  $("error").style.display = "none";
+  $("sendBtn").disabled = true;
+  cancelTyping();
+  state.requestId += 1;
+  const requestId = state.requestId;
+  addMessage("user", `<p>${escapeHtml(symptom)}</p>`, {forceScroll: true});
+  const bubble = beginAssistant();
+  state.stages = [];
+  try {
+    if (state.mode === "replay") {
+      const payload = await getJSON("/api/demo/diagnose", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({scenario_id: $("scenario").value, symptom, v2: $("v2").checked})
+      });
+      if (requestId !== state.requestId) return;
+      const stage = bubble.querySelector(".stage"); if (stage) stage.remove();
+      finalizeAnswer(bubble, payload);
+    } else {
+      const response = await fetch("/api/ask/stream", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({symptom, model: $("model").value, v2: $("v2").checked,
+                              mode: state.mode === "live" ? "live" : "auto"})
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        const detail = data.detail || {};
+        throw new Error(detail.message || detail.code || ("HTTP " + response.status));
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const {value, done} = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, {stream: true});
+        let index;
+        while ((index = buffer.indexOf("\n")) >= 0) {
+          const line = buffer.slice(0, index).trim();
+          buffer = buffer.slice(index + 1);
+          if (!line) continue;
+          const event = JSON.parse(line);
+          if (requestId !== state.requestId) return;
+          await handleEvent(bubble, event);
+        }
+      }
+    }
+  } catch (err) {
+    if (requestId === state.requestId) {
+      bubble.innerHTML = `<p class="stale">请求失败：${escapeHtml(err.message)}</p>
+        <p class="small muted">没有使用历史 Replay 冒充成功，也没有自动重试。</p>`;
+    }
+  } finally {
+    if (requestId === state.requestId) $("sendBtn").disabled = false;
+    $("exportBtn").disabled = !state.last;
+  }
+}
+
+function showError(message) {
+  $("error").textContent = message;
+  $("error").style.display = "block";
+}
+
+function markdownForLast() {
+  const p = state.last;
+  if (!p) return "";
+  const answer = p.answer || {};
+  return ["# PrintDiag 诊断报告", "",
+    `- 来源：${answer.mode || p.mode || "UNKNOWN"}`,
+    `- 模型：${answer.model || "Qwen3.5-4B"}`,
+    `- Live：${(p.meta && p.meta.live_inference) ? "是" : "否"}`,
+    `- 生成时间：${new Date().toLocaleString()}`,
+    "", "## 结论", answer.conclusion || "", "",
+    "## 当前证据", ...(answer.evidence || []).map(x => "- " + x), "",
+    "## 可能原因（待验证）", ...(answer.possible_causes || []).map(x => "- " + x), "",
+    "## 建议检查", ...(answer.next_steps || []).map(x => "- " + x), "",
+    "## 尚不能确认", ...(answer.uncertain || []).map(x => "- " + x), "",
+    "> 设备只读；Live 结果来自 Qwen；Replay 为历史输出，不代表本轮实时推理。"].join("\n");
+}
+
+function exportMarkdown() {
+  const text = markdownForLast();
+  if (!text) return;
+  const blob = new Blob([text], {type: "text/markdown;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "printdiag-report.md";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+async function init() {
+  try {
+    const data = await getJSON("/api/scenarios");
+    state.scenarios = data.scenarios || [];
+    const select = $("scenario");
+    select.innerHTML = state.scenarios.map(item =>
+      `<option value="${escapeHtml(item.scenario_id)}">${escapeHtml(item.scenario_id)} · ${escapeHtml(item.title)}</option>`).join("");
+    select.onchange = () => {
+      const scenario = state.scenarios.find(item => item.scenario_id === select.value);
+      if (scenario) $("symptom").value = scenario.symptom;
+    };
+  } catch (err) { showError("场景加载失败：" + err.message); }
+  await loadDevice();
+  await loadLiveStatus();
+  setMode("auto");
+  $("refreshInterval").onchange = updateInterval;
+}
+
+document.querySelectorAll(".tab").forEach(tab => tab.onclick = () => setMode(tab.dataset.mode));
+$("refreshBtn").onclick = () => { state.backoff = 0; loadDevice(true); };
+$("sendBtn").onclick = ask;
+$("exportBtn").onclick = exportMarkdown;
+$("symptom").addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); ask(); }
+});
+init();
+</script>
+</body>
+</html>
