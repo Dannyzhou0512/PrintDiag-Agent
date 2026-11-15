@@ -2,9 +2,9 @@
 
 PrintDiag-Agent 是一个面向 FDM 3D 打印的诊断助手。输入「外壁线条偏细」「打印件发生层错位」等现象，系统会读取可用的设备状态、检索维修知识，并生成带依据的检查报告。报告会标明哪些现象来自用户、哪些来自设备，以及哪些原因还需要验证。
 
-**V1 可以在无 GPU 环境下完整演示。** 公开版包含 Console、FastAPI、合成诊断回放、只读模拟器接入、SQLite 历史和 Markdown 导出。云端 Qwen 推理是独立的可选模式。
+**V1 的五分钟离线 Demo 无需 GPU、模型权重或 Marlin Simulator。** 它使用固定 Mock 草稿和合成设备数据，实际运行 BM25 检索、V0.3/V2 校验、Safety、SQLite 历史和 Markdown 导出。离线界面中的 Base / LoRA 选项用于演示模型选择和来源标识。模拟器读取和云端 Qwen 推理各有独立的运行方式。
 
-[五分钟离线演示](#五分钟离线演示) · [Console 功能截图](#console-功能截图) · [Marlin Simulator](#marlin-simulator) · [RTX 5090 微调与云端推理](#rtx-5090-微调与云端推理) · [V1 验证与后续方向](#v1-验证与后续方向)
+[五分钟离线演示](#五分钟离线演示) · [Console 功能截图](#console-功能截图) · [Marlin Simulator](#marlin-simulator) · [RTX 5090 微调与云端推理](#rtx-5090-微调与云端推理) · [V1 资源与复现范围](#v1-资源与复现范围) · [V1 验证与后续方向](#v1-验证与后续方向)
 
 ![PrintDiag Console 离线诊断。报告显示疑似挤出不足、证据不足、判断依据和两项检查。](docs/assets/console/v1-diagnosis.png)
 
@@ -63,7 +63,7 @@ Marlin Simulator 在本机运行固件和虚拟打印机，提供运动学、加
 
 *本地 Simulator 原生界面。左上角显示 `127.0.0.1:8100` 的 HTTP 活动，右侧是组件和 LCD，底部是固件串口日志。画面保留实拍时 LCD 的 EEPROM 版本提示。*
 
-只读连接使用支持 `/ping`、`/state`、`/idle` 和限位组件状态查询的 Marlin Simulator 构建。模拟器准备好后可以先运行 `Invoke-RestMethod 'http://127.0.0.1:8100/ping' -TimeoutSec 3`，再按 [Simulator 只读启动步骤](docs/DEMO_GUIDE.md#单独展示真实模拟器读数) 打开设备总览。人工单轴点动属于独立控制功能，需要特定构建及人工授权。
+只读连接使用支持 `/ping`、`/state`、`/idle` 和限位组件状态查询的 Marlin Simulator 构建。公开仓库未提供本次验收用的模拟器可执行文件。模拟器准备好后可以先运行 `Invoke-RestMethod 'http://127.0.0.1:8100/ping' -TimeoutSec 3`，再按 [Simulator 只读启动步骤](docs/DEMO_GUIDE.md#单独展示真实模拟器读数) 打开设备总览。人工单轴点动属于独立控制功能，需要特定构建及人工授权。 [Marlin 上游源码](https://github.com/MarlinFirmware/Marlin)
 
 ## 系统架构与证据
 
@@ -89,7 +89,7 @@ flowchart LR
 
 ## RTX 5090 微调与云端推理
 
-V1 曾在云端 **NVIDIA GeForce RTX 5090（32 GB）** 上用 **LLaMA-Factory** 对 **Qwen3.5-4B** 做 LoRA 监督微调（SFT）。目标是让模型练习 3D 打印诊断的七字段输出和检查建议格式。训练生成 Adapter。推理时可用同一 Base 直接生成，也可载入该 Adapter 生成。
+V1 曾在云端 **NVIDIA GeForce RTX 5090（32 GB）** 上用 [LLaMA-Factory](https://github.com/hiyouga/LlamaFactory) 对 **Qwen3.5-4B** 做 LoRA 监督微调（SFT）。目标是让模型练习 3D 打印诊断的七字段输出和检查建议格式。训练生成 Adapter。推理时可用同一 Base 直接生成，也可载入该 Adapter 生成。
 
 | 训练项 | 归档配置或实测记录 |
 | --- | --- |
@@ -99,9 +99,21 @@ V1 曾在云端 **NVIDIA GeForce RTX 5090（32 GB）** 上用 **LLaMA-Factory** 
 | 优化 | 学习率 `1e-4`、Cosine 调度、Warmup 5%、每设备 Batch 1、梯度累积 8、Seed 42 |
 | 本次归档 | 训练计时约 16 分钟，最后一轮验证 Loss 0.9941 |
 
-运行时，Base 和 Base + LoRA 都可以接收相同的设备观测与 RAG 背景。两者生成的草稿经过同一套 V0.3、V2 和 Safety 校验。云端服务部署时需要自备固定版本的 Base 模型、匹配的 Adapter 和推理依赖。公开仓库包含推理服务源码、操作说明和评测汇总。原始训练数据、权重、Adapter、云端凭据和私有模型输出独立保管。 [可选云端部署步骤](docs/DEMO_GUIDE.md#可选云端真实推理)
+运行时，Base 和 Base + LoRA 都可以接收相同的设备观测与 RAG 背景。两者生成的草稿经过同一套 V0.3、V2 和 Safety 校验。云端服务部署时需要自备固定版本的 Base 模型、匹配的 Adapter 和推理依赖。公开仓库提供推理服务源码、操作说明和评测汇总。本项目训练得到的 LoRA Adapter 暂未公开，官方基础权重可按下节链接下载。 [可选云端部署步骤](docs/DEMO_GUIDE.md#可选云端真实推理)
 
 首次 30 条留出评测中，LoRA 有 **7/30** 条把布尔值 `false` 写成字符串。V0.3 严格校验会拒绝这类输出。后续四组历史模型评测中，LoRA + RAG 和 Base + RAG 的全样本类别准确率均为 10.0%。现有数据尚无法支持 LoRA 提升故障分类准确率的结论。
+
+## V1 资源与复现范围
+
+| 资源 | 获取方式与用途 |
+| --- | --- |
+| V1 源码与合成样例 | 仓库已提供。按 [安装与测试复现](docs/REPRODUCIBILITY.md) 运行，可复现离线诊断、检索、报告与安全回放。 |
+| RAG 维修知识库 | 随源码提供 16 个项目自编片段，覆盖限位、温控、挤出不足等主题，由本地 BM25 检索。 [基础语料（JSON）](src/printdiag/rag/knowledge/maintenance/printdiag-v01.json) · [扩展语料（JSONL）](src/printdiag/rag/knowledge/maintenance/printdiag-p10_3.jsonl) |
+| Qwen3.5-4B 基础权重 | 由 Qwen 官方发布，模型页标注 Apache-2.0。`851bf6e` 是 P10-9B Base / LoRA 联调使用的固定版本。 [官方模型](https://huggingface.co/Qwen/Qwen3.5-4B) · [联调所用快照](https://huggingface.co/Qwen/Qwen3.5-4B/tree/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a) |
+| PrintDiag LoRA Adapter | 已完成 RTX 5090 微调，Adapter 权重和配置暂未公开。复现同一次 LoRA 推理还需要该 Adapter 与匹配的模型和推理配置。 |
+| 训练与评测数据 | 公开版提供合成演示样例及评测汇总。原始 SFT 训练集、历史评测数据和模型原始输出独立保管。 [评测结果与口径](docs/EVALUATION_SUMMARY.md) |
+
+本仓库的源码和知识语料目前公开可读，项目尚未声明开源许可证。上游模型和工具的许可证适用于各自发布的资源。
 
 ## V1 验证与后续方向
 
