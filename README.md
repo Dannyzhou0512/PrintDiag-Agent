@@ -4,9 +4,9 @@
 
 面向 FDM 3D 打印的证据驱动型 AI 故障诊断系统。
 
-`Python 3.13` · `FastAPI` · `Qwen3.5-4B` · `LoRA` · `RAG / BM25` · `Marlin`
+![Python 3.13](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white) ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white) ![Qwen3.5-4B](https://img.shields.io/badge/Qwen3.5--4B-6D28D9?style=flat-square) ![LoRA SFT](https://img.shields.io/badge/LoRA-SFT-7C3AED?style=flat-square) ![RAG / BM25](https://img.shields.io/badge/RAG-BM25-475569?style=flat-square) ![Marlin Simulator](https://img.shields.io/badge/Marlin-Simulator-2563EB?style=flat-square)
 
-[离线 Demo](#五分钟离线演示) · [系统架构](#系统架构) · [功能截图](#功能截图) · [模型与资源](#复现与资源)
+[离线 Demo](#五分钟离线演示) · [系统架构](#系统架构) · [功能截图](#功能截图) · [模型与评测](#模型与评测)
 
 ![PrintDiag Console 的离线 Mock 诊断报告，展示疑似挤出不足、证据不足以及检查建议](docs/assets/console/v1-diagnosis.png)
 
